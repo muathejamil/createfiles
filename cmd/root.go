@@ -5,11 +5,12 @@ package cmd
 
 import (
 	"createfiles/io"
-	"fmt"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	_ "io"
 	"os"
+	"strconv"
+	"strings"
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -18,26 +19,38 @@ var rootCmd = &cobra.Command{
 	Short: "Generate multiple files with different sizes",
 	Long:  `This application is used to save your time by generating multiple files for you with different sizes`,
 	Run: func(cmd *cobra.Command, args []string) {
-		size, sizeErr := cmd.Flags().GetString("size")
-		if sizeErr != nil {
+		size, err := cmd.Flags().GetString("size")
+		if err != nil {
 			log.WithFields(log.Fields{
-				"error": sizeErr,
-			}).Errorf("Error in size file flag!")
+				"error": err,
+			}).Errorf("Error in the size file flag!")
 			os.Exit(1)
 		}
-
-		fmt.Println(size)
-		count, countErr := cmd.Flags().GetInt32("count")
-		if countErr != nil {
+		unit := size[len(size)-2:]
+		unitSize, err := strconv.Atoi(size[:len(size)-2])
+		if err != nil {
 			log.WithFields(log.Fields{
-				"error": sizeErr,
+				"error": err,
+			}).Errorf("Error in the size flag!")
+			os.Exit(1)
+		}
+		upperUnit := strings.ToUpper(unit)
+		unitSizeInKB := MapToKb(upperUnit, unitSize)
+		count, err := cmd.Flags().GetInt("count")
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error": err,
 			}).Errorf("Error in count file flag!")
 			os.Exit(1)
 		}
-		file := io.NewFile("file1.txt", "./data/", 1)
-		io.PopulateTheFile("./data/file1.txt", 1)
-		fmt.Println(file)
-		fmt.Println(count)
+		path, err := cmd.Flags().GetString("path")
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error": err,
+			}).Errorf("Error in count file flag!")
+			os.Exit(1)
+		}
+		io.CreateBatch(path, count, unitSizeInKB)
 	},
 	CompletionOptions: cobra.CompletionOptions{
 		DisableDefaultCmd: true,
@@ -65,5 +78,24 @@ func init() {
 	// when this action is called directly.
 	//rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 	rootCmd.Flags().StringP("size", "s", "1kb", "Size of required files")
-	rootCmd.Flags().Int32P("count", "c", 1, "The count of files to be generated")
+	rootCmd.Flags().StringP("path", "p", "data", "The path of the directory to generate file on")
+	rootCmd.Flags().IntP("count", "c", 1, "The count of files to be generated")
+}
+
+func MapToKb(unit string, unitsize int) int {
+	switch unit {
+	case "KB":
+		unitsize = unitsize * 1
+		break
+	case "MB":
+		unitsize = unitsize * 1000
+		break
+	case "GB":
+		unitsize = unitsize * 1000000
+		break
+	default:
+		log.Errorf("Unsupported size unit: %s", unit)
+		os.Exit(1)
+	}
+	return unitsize
 }
