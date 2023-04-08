@@ -1,10 +1,6 @@
-/*
-Copyright © 2023 NAME HERE <EMAIL ADDRESS>
-*/
 package cmd
 
 import (
-	"createfiles/io"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	_ "io"
@@ -12,6 +8,27 @@ import (
 	"strconv"
 	"strings"
 )
+
+const (
+	KB = 1024
+	MB = KB * 1024
+	GB = MB * 1024
+)
+
+func init() {
+	// Here you will define your flags and configuration settings.
+	// Cobra supports persistent flags, which, if defined here,
+	// will be global for your application.
+
+	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.createfiles.yaml)")
+
+	// Cobra also supports local flags, which will only run
+	// when this action is called directly.
+	//rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	rootCmd.Flags().StringP("size", "s", "100kb", "Size of required files")
+	rootCmd.Flags().StringP("path", "p", "C:\\Users\\Lenovo\\GolandProjects\\createfiles\\data", "The path of the directory to generate file on")
+	rootCmd.Flags().IntP("count", "c", 4, "The count of files to be generated")
+}
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -47,10 +64,10 @@ var rootCmd = &cobra.Command{
 		if err != nil {
 			log.WithFields(log.Fields{
 				"error": err,
-			}).Errorf("Error in count file flag!")
+			}).Errorf("Error in file path flag!")
 			os.Exit(1)
 		}
-		io.CreateBatch(path, count, unitSizeInKB)
+		CreateBatch(path, count, unitSizeInKB)
 	},
 	CompletionOptions: cobra.CompletionOptions{
 		DisableDefaultCmd: true,
@@ -67,35 +84,14 @@ func Execute() {
 	}
 }
 
-func init() {
-	// Here you will define your flags and configuration settings.
-	// Cobra supports persistent flags, which, if defined here,
-	// will be global for your application.
-
-	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.createfiles.yaml)")
-
-	// Cobra also supports local flags, which will only run
-	// when this action is called directly.
-	//rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-	rootCmd.Flags().StringP("size", "s", "1kb", "Size of required files")
-	rootCmd.Flags().StringP("path", "p", "data", "The path of the directory to generate file on")
-	rootCmd.Flags().IntP("count", "c", 1, "The count of files to be generated")
-}
-
-func MapToKb(unit string, unitsize int) int {
+func MapToKb(unit string, size int) int {
 	switch unit {
 	case "KB":
-		unitsize = unitsize * 1
-		break
+		return size * KB
 	case "MB":
-		unitsize = unitsize * 1000
-		break
+		return size * MB
 	case "GB":
-		unitsize = unitsize * 1000000
-		break
-	default:
-		log.Errorf("Unsupported size unit: %s", unit)
-		os.Exit(1)
+		return size * GB
 	}
-	return unitsize
+	return 0
 }
